@@ -1,0 +1,55 @@
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu focal stable
+    state: present
+
+- name: Update apt and install docker-ce
+  apt:
+    name: docker-ce
+    state: latest
+    update_cache: true
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+
+- name: Start a REGISTRY container
+  docker_container:
+    name: registry
+    image: registry:2
+    state: started
+    restart_policy: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - /opt/registry:/var/lib/registry
+    env:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+      REGISTRY_HTTP_ADDR:
+
+- name: Ensure Docker is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+    daemon_reload: yes
+    become: true
+
+- name: Upload the images in the registry (dockerfile in files/images)
+  command: "docker build -t {{ item.name }} {{ item.path }}"
+  with_items:
+    - { name: "befunge-base", path: "files/images/befunge/Dockerfile.base" }
+    - { name: "befunge-standalone", path: "files/images/befunge/Dockerfile.standalone" }
+    - { name: "c-base", path: "files/images/c/Dockerfile.base" }
+    - { name: "c-standalone", path: "files/images/c/Dockerfile.standalone" }
+    - { name: "java-base", path: "files/images/java/Dockerfile.base" }
+    - { name: "java-standalone", path: "files/images/java/Dockerfile.standalone" }
+    - { name: "javascript-base", path: "files/images/javascript/Dockerfile.base" }
+    - { name: "javascript-standalone", path: "files/images/javascript/Dockerfile.standalone" }
+    - { name: "python-base", path: "files/images/python/Dockerfile.base" }
+    - { name: "python-standalone", path: "files/images/python/Dockerfile.standalone" }

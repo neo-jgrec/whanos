@@ -1,0 +1,13 @@
+- name: Base
+  hosts: all
+  roles:
+    - base
+  tags: base
+
+- name: Jenkins
+  hosts: jenkins
+  roles:
+    - registry
+    - java
+    - jenkins
+  tags: jenkins

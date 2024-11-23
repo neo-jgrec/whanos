@@ -1,0 +1,46 @@
+- name: Ensure Jenkins APT key is installed
+  apt_key:
+    url: https://pkg.jenkins.io/debian/jenkins.io.key
+    state: present
+  become: true
+
+- name: Ensure Jenkins APT repository is configured
+  apt_repository:
+    repo: deb https://pkg.jenkins.io/debian-stable binary/
+    state: present
+  become: true
+
+- name: Ensure Jenkins is installed
+  apt:
+    name: jenkins
+    update_cache: yes
+  become: true
+
+- name: Ensure Jenkins is running
+  service:
+    name: jenkins
+    state: started
+    enabled: yes
+  become: true
+
+- name: Put files in place
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - {src: "files/plugins.txt", dest: "/var/whanos/plugins.txt", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "files/jenkins.yml", dest: "/var/jenkins_home/casc_configs/jenkins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "files/job_dsl.groovy", dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "files/docker-deploy.sh", dest: "/var/whanos/docker-deploy.sh", owner: "jenkins", group: "jenkins", mode: "0755"}
+  become: true
+
+- name: Install Jenkins plugins
+  command: "jenkins-plugin-cli -f /var/whanos/plugins.txt"
+  become: true
+
+- name: Restart Jenkins
+  command: "systemctl restart jenkins"
+  become: true
