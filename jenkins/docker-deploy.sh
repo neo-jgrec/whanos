@@ -8,7 +8,7 @@ if [[ -f app/pom.xml ]]; then
 	LANGUAGE+=("java")
 fi
 if [[ -f package.json ]]; then
-	LANGUAGE+=("js")
+	LANGUAGE+=("javascript")
 fi
 if [[ -f requirements.txt ]]; then
 	LANGUAGE+=("python")

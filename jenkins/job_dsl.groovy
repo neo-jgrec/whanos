@@ -6,7 +6,7 @@ folder('Projects') {
   description('Contain all the projects you want')
 }
 
-supported_languages = ["c", "java", "js", "python", "befunge"]
+supported_languages = ["c", "java", "javascript", "python", "befunge"]
 registry = "localhost:5000"
 
 supported_languages.each { supported_languages ->
