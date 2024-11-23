@@ -1,0 +1,30 @@
+jenkins:
+  systemMessage: "AUTOMATICALLY DEPLOY (NEARLY) ANYTHING WITH A SNAP"
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+      - id: "admin"
+        name: "admin"
+        password: ${JENKINS_ADMIN_PASSWORD}
+
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - name: "admin"
+            description: "He can deploy anything with a snap"
+            permissions:
+              - "Overall/Administer"
+            entries:
+              - user: "admin"
+
+security:
+  GlobalJobDslSecurityConfiguration:
+    useScriptSecurity: false
+  gitHostKeyVerificationConfiguration:
+    sshHostKeyVerificationStrategy: "AcceptFirstConnectionStrategy"
+
+jobs:
+  - file: /usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy
