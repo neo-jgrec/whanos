@@ -30,8 +30,8 @@ freeStyleJob("Whanos base images/Build all base images") {
 freeStyleJob('link-project') {
   parameters {
         stringParam('DISPLAY_NAME', '', 'Display name for the job')
-        stringParam('GITHUB_NAME', '', 'GitHub repository owner/repo_name (e.g.: "EpitechPromo2027/B-DEV-500-REN-5-2-area-jean-yanis.jeffroy")')
-        stringParam('ID_CREDENTIALS', '', 'id of the ssh key used to clone the repository')
+        stringParam('GITHUB_NAME', '', 'GitHub repository owner/repo_name (e.g.: "git@github.com:neo-jgrec/whanos-epitech.git")')
+        stringParam('ID_CREDENTIALS', '', 'id of the ssh key used to clone the repository (e.g.: "jenkins-ssh-key". You can create one in the jenkins credentials page)')
   }
   steps {
     dsl {
@@ -55,16 +55,6 @@ freeStyleJob('link-project') {
           }
           steps {
             shell('/var/whanos/docker-deploy.sh $DISPLAY_NAME')
-            conditionalSteps {
-              condition {
-                and {
-                  fileExists('whanos.yml', BaseDir.WORKSPACE)
-                }
-                steps {
-                  shell('kubectl apply -f whanos.yml')
-                }
-              }
-            }
           }
         }
     ''')
