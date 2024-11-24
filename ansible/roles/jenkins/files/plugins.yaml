@@ -1,0 +1,11 @@
+plugins:
+  - artifactId: cloudbees-folder
+  - artifactId: configuration-as-code
+  - artifactId: credentials
+  - artifactId: github
+  - artifactId: instance-identity
+  - artifactId: job-dsl
+  - artifactId: script-security
+  - artifactId: structs
+  - artifactId: role-strategy
+  - artifactId: ws-cleanup

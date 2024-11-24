@@ -1,54 +1,82 @@
-- name: Ensure Jenkins APT key is installed
+- name: Install Java and fontconfig (required by Jenkins)
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - fontconfig
+    - openjdk-17-jre
+  become: true
+
+- name: Add Jenkins' official GPG key
   apt_key:
-    url: https://pkg.jenkins.io/debian/jenkins.io.key
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
     state: present
   become: true
 
-- name: Ensure Jenkins APT repository is configured
+- name: Add Jenkins' official repository
   apt_repository:
     repo: deb https://pkg.jenkins.io/debian-stable binary/
     state: present
   become: true
 
-- name: Ensure Jenkins is installed
+- name: Update apt cache
   apt:
-    name: jenkins
     update_cache: yes
   become: true
 
-- name: Disable Jenkins setup wizard
-  lineinfile:
-    path: /etc/default/jenkins
-    regexp: '^JAVA_ARGS='
-    line: 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"'
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
   become: true
 
-- name: Add the environment variable to Jenkins service to point to the configuration as code
-  lineinfile:
-    path: /usr/lib/systemd/system/jenkins.service
-    regexp: '^Environment='
-    line: 'Environment="JAVA_OPTS=-Dcasc.jenkins.config=/var/jenkins_home/casc_configs/jenkins.yaml"'
-  become: true
-
-- name: Ensure Jenkins is running
+- name: Stop Jenkins (autostarts after install)
   service:
     name: jenkins
-    state: started
-    enabled: yes
+    state: stopped
   become: true
 
-- name: Create all needed folders (/var/whanos, /var/jenkins_home/casc_configs, /usr/share/jenkins/ref/init.groovy.d)
+- name: Create all needed folders
   file:
     path: "{{ item.path }}"
     state: directory
     owner: "{{ item.owner }}"
     group: "{{ item.group }}"
     mode: "{{ item.mode }}"
+    recurse: true
   with_items:
-    - {path: "/var/whanos", owner: "jenkins", group: "jenkins", mode: "0755"}
-    - {path: "/var/jenkins_home/casc_configs", owner: "jenkins", group: "jenkins", mode: "0755"}
     - {path: "/usr/share/jenkins/ref/init.groovy.d", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {path: "/var/cache/jenkins/tmp", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {path: "/var/cache/jenkins/heapdumps", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {path: "/var/lib/jenkins/plugins", owner: "jenkins", group: "jenkins", mode: "0755"}
   become: true
+
+- name: Update JENKINS_JAVA_OPTIONS
+  become: true
+  lineinfile:
+    path: "/etc/default/jenkins"
+    regexp: ".*-Djava.awt.headless=true.*"
+    line: 'JENKINS_JAVA_OPTIONS="-Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Djenkins.install.runSetupWizard=false -Djava.io.tmpdir=/var/cache/jenkins/tmp/ -Dorg.apache.commons.jelly.tags.fmt.timeZone=America/New_York -Duser.timezone=America/New_York"'
+    state: present
+
+- name: Update JENKINS_ARGS
+  become: true
+  lineinfile:
+    path: "/etc/default/jenkins"
+    regexp: ".*JENKINS_ARGS=.*"
+    line: 'JENKINS_ARGS="--pluginroot=/var/cache/jenkins/plugins"'
+    state: present
+
+- name: Create limits file
+  become: true
+  copy:
+    dest: "/etc/security/limits.d/30-jenkins.conf"
+    src: "30-jenkins.conf"
+
+- name: Download jenkins-plugin-manager
+  get_url:
+    url: https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.13.2/jenkins-plugin-manager-2.13.2.jar
+    dest: /tmp/jenkins-plugin-manager.jar
 
 - name: Put files in place
   copy:
@@ -58,16 +86,27 @@
     group: "{{ item.group }}"
     mode: "{{ item.mode }}"
   with_items:
-    - {src: "../../../../jenkins/plugins.txt", dest: "/var/whanos/plugins.txt", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "../../../../jenkins/jenkins.yml", dest: "/var/jenkins_home/casc_configs/jenkins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "../../../../jenkins/job_dsl.groovy", dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "../../../../jenkins/docker-deploy.sh", dest: "/var/whanos/docker-deploy.sh", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {src: "plugins.yaml", dest: "/tmp/plugins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "jenkins.yaml", dest: "/var/lib/jenkins/jenkins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "job_dsl.groovy", dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "docker-deploy.sh", dest: "/var/whanos/docker-deploy.sh", owner: "jenkins", group: "jenkins", mode: "0755"}
   become: true
 
-- name: Install Jenkins plugins
-  command: "java -jar jenkins-cli.jar -s http://localhost:8080/ install-plugin `cat /var/whanos/plugins.txt | tr '\n' ' '`"
+- name: run the jenkins-plugin-manager
   become: true
+  command: java -jar /tmp/jenkins-plugin-manager.jar --jenkins-version 2.479.1 --plugin-file /tmp/plugins.yaml --plugin-download-directory /var/lib/jenkins/plugins
 
-- name: Restart Jenkins
-  command: "systemctl restart jenkins"
+- name: update plugin ownership
   become: true
+  file:
+    path: /var/lib/jenkins
+    owner: jenkins
+    group: jenkins
+    state: directory
+    recurse: true
+
+- name: start jenkins service
+  become: true
+  systemd:
+    name: jenkins
+    state: started
