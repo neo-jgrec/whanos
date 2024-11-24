@@ -1,2 +1,3 @@
 /whanos.pem
 /ansible/production/hosts
+.vault_pass

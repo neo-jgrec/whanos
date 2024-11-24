@@ -78,6 +78,15 @@
     url: https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.13.2/jenkins-plugin-manager-2.13.2.jar
     dest: /tmp/jenkins-plugin-manager.jar
 
+- name: Put jenkins.yaml with resolved user passwd
+  template:
+    src: "../files/jenkins.yaml"
+    dest: "/var/lib/jenkins/jenkins.yaml"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0644"
+  become: true
+
 - name: Put files in place
   copy:
     src: "{{ item.src }}"
@@ -87,7 +96,6 @@
     mode: "{{ item.mode }}"
   with_items:
     - {src: "plugins.yaml", dest: "/tmp/plugins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "jenkins.yaml", dest: "/var/lib/jenkins/jenkins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
     - {src: "job_dsl.groovy", dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy", owner: "jenkins", group: "jenkins", mode: "0644"}
     - {src: "docker-deploy.sh", dest: "/var/whanos/docker-deploy.sh", owner: "jenkins", group: "jenkins", mode: "0755"}
   become: true
