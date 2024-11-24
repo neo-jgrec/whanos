@@ -1,7 +1,5 @@
 - name: Install Java
   apt:
-    name: "{{ item }}"
+    name: default-jre
     state: present
-  with_items:
-    - openjdk-11-jdk
   become: true
