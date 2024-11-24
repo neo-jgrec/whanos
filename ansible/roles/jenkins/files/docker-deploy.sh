@@ -2,6 +2,7 @@
 
 LANGUAGE=()
 REGISTRY=localhost:5000
+DISPLAY_NAME=$(echo $(basename $(pwd)) | tr '[:upper:]' '[:lower:]')
 
 if [[ -f Makefile ]]; then
 	LANGUAGE+=("c")
@@ -28,16 +29,18 @@ if [[ ${#LANGUAGE[@]} != 1 ]]; then
 	exit 1
 fi
 
-image_name=whanos$1-${LANGUAGE[0]}
+image_name=whanos-${LANGUAGE[0]}-$DISPLAY_NAME
+echo "Building $image_name"
 
 if [[ -f Dockerfile ]]; then
-	docker build . -t $image_name
-    docker tag $image_name:latest $REGISTRY/whanos/$image_name:latest
-    docker push $REGISTRY/whanos/$image_name:latest
+	docker build . -t $image_name || exit 1
 else
 	docker build . \
 		-f /opt/registry/${LANGUAGE[0]}/Dockerfile.standalone \
-		-t $image_name-standalone
-    docker tag $image_name-standalone:latest $REGISTRY/whanos/$image_name-standalone:latest
-    docker push $REGISTRY/whanos/$image_name-standalone:latest
+		-t $image_name || exit 1
 fi
+
+docker tag $image_name $REGISTRY/$image_name || exit 1
+docker push $REGISTRY/$image_name || exit 1
+docker pull $REGISTRY/$image_name || exit 1
+docker rmi $image_name || exit 1
