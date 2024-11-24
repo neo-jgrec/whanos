@@ -41,7 +41,10 @@
     src: "../../../../images/"
     dest: "/opt/registry/"
     directory_mode: yes
-    mode: 0755
+  become: true
+
+- name: Set permission so everyone can read the Dockerfile images
+  command: "chmod -R 0644 /opt/registry"
   become: true
 
 - name: Build the Docker images (base)
