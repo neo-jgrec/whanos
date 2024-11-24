@@ -13,8 +13,8 @@ supported_languages.each { supported_languages ->
     freeStyleJob("Whanos base images/whanos-$supported_languages") {
         steps {
               shell("docker build /opt/registry/$supported_languages -f /opt/registry/$supported_languages/Dockerfile.base -t whanos-$supported_languages")
-              shell("docker tag $supported_languages:latest $registry/whanos/$supported_languages:latest")
-              shell("docker push $registry/whanos/$supported_languages:latest")
+              shell("docker tag whanos-befunge:latest $registry/whanos/befunge:latest")
+              shell("docker push $registry/whanos/befunge:latest")
         }
     }
 }
