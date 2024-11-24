@@ -34,7 +34,7 @@ if [[ -f Dockerfile ]]; then
     docker push $REGISTRY/whanos/$image_name:latest
 else
 	docker build . \
-		-f /var/whanos/images/${LANGUAGE[0]}/Dockerfile.standalone \
+		-f /opt/registry/${LANGUAGE[0]}/Dockerfile.standalone \
 		-t $image_name-standalone
     docker tag $image_name-standalone:latest $REGISTRY/whanos/$image_name-standalone:latest
     docker push $REGISTRY/whanos/$image_name-standalone:latest
