@@ -4,10 +4,15 @@
     - base
   tags: base
 
-- name: Jenkins
+- name: Docker Registry
   hosts: jenkins
   roles:
     - registry
+  tags: docker-registry
+
+- name: Jenkins
+  hosts: jenkins
+  roles:
     - java
     - jenkins
   tags: jenkins

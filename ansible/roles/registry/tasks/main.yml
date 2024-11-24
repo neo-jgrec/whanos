@@ -1,22 +1,26 @@
-- name: Add Docker GPG apt Key
+- name: Add Docker's official GPG key
   apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: https://download.docker.com/linux/debian/gpg
     state: present
+  become: true
 
-- name: Add Docker Repository
-  apt_repository:
-    repo: deb https://download.docker.com/linux/ubuntu focal stable
-    state: present
+- name: Add the repository to Apt sources
+  command: "echo 'deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable' | tee /etc/apt/sources.list.d/docker.list"
+  become: true
 
-- name: Update apt and install docker-ce
+- name: Install Docker
   apt:
-    name: docker-ce
-    state: latest
-    update_cache: true
+    name: docker.io
+    state: present
+  become: true
 
-- name: Install Docker Module for Python
-  pip:
+- name: Ensure Docker is running
+  become: true
+  service:
     name: docker
+    state: started
+    enabled: yes
+    daemon_reload: yes
 
 - name: Start a REGISTRY container
   docker_container:
@@ -30,26 +34,22 @@
       - /opt/registry:/var/lib/registry
     env:
       REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
-      REGISTRY_HTTP_ADDR:
+  become: true
 
-- name: Ensure Docker is running
-  service:
-    name: docker
-    state: started
-    enabled: yes
-    daemon_reload: yes
-    become: true
+- name: Copy the Dockerfile images in the registry to /opt/registry
+  copy:
+    src: "../../../../images/"
+    dest: "/opt/registry/"
+    directory_mode: yes
+    mode: 0755
+  become: true
 
-- name: Upload the images in the registry (dockerfile in files/images)
-  command: "docker build -t {{ item.name }} {{ item.path }}"
+- name: Build the Docker images (base)
+  command: "docker build -t {{ item.tag }} -f {{ item.path }} /opt/registry"
   with_items:
-    - { name: "befunge-base", path: "files/images/befunge/Dockerfile.base" }
-    - { name: "befunge-standalone", path: "files/images/befunge/Dockerfile.standalone" }
-    - { name: "c-base", path: "files/images/c/Dockerfile.base" }
-    - { name: "c-standalone", path: "files/images/c/Dockerfile.standalone" }
-    - { name: "java-base", path: "files/images/java/Dockerfile.base" }
-    - { name: "java-standalone", path: "files/images/java/Dockerfile.standalone" }
-    - { name: "javascript-base", path: "files/images/javascript/Dockerfile.base" }
-    - { name: "javascript-standalone", path: "files/images/javascript/Dockerfile.standalone" }
-    - { name: "python-base", path: "files/images/python/Dockerfile.base" }
-    - { name: "python-standalone", path: "files/images/python/Dockerfile.standalone" }
+    - { tag: "befunge-base", path: "/opt/registry/befunge/Dockerfile.base" }
+    - { tag: "javascript-base", path: "/opt/registry/javascript/Dockerfile.base" }
+    - { tag: "python-base", path: "/opt/registry/python/Dockerfile.base" }
+    - { tag: "java-base", path: "/opt/registry/java/Dockerfile.base" }
+    - { tag: "c-base", path: "/opt/registry/c/Dockerfile.base" }
+  become: true
