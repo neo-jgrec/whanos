@@ -1,6 +1,6 @@
 FROM gcc:13.2 as builder
 
-SHELL ["/bin/bash", "-c"]
+ONBUILD SHELL ["/bin/bash", "-c"]
 
 ONBUILD WORKDIR /app
 ONBUILD COPY . /app

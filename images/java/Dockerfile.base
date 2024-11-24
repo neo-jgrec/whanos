@@ -1,6 +1,6 @@
 FROM maven:3.9.6-eclipse-temurin-21 as builder
 
-SHELL ["/bin/bash", "-c"]
+ONBUILD SHELL ["/bin/bash", "-c"]
 ONBUILD COPY . /app
 ONBUILD WORKDIR /app
 ONBUILD RUN mvn compile -f app/pom.xml
