@@ -1,3 +1,5 @@
+#!/bin/bash
+
 LANGUAGE=()
 REGISTRY=localhost:5000
 
@@ -26,7 +28,7 @@ if [[ ${#LANGUAGE[@]} != 1 ]]; then
 	exit 1
 fi
 
-image_name=whanos-$1-${LANGUAGE[0]}
+image_name=whanos$1-${LANGUAGE[0]}
 
 if [[ -f Dockerfile ]]; then
 	docker build . -t $image_name
