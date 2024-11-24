@@ -60,9 +60,9 @@
 - name: Build the Docker images (base)
   command: "docker build -t {{ item.tag }} -f {{ item.path }} /opt/registry"
   with_items:
-    - { tag: "befunge-base", path: "/opt/registry/befunge/Dockerfile.base" }
-    - { tag: "javascript-base", path: "/opt/registry/javascript/Dockerfile.base" }
-    - { tag: "python-base", path: "/opt/registry/python/Dockerfile.base" }
-    - { tag: "java-base", path: "/opt/registry/java/Dockerfile.base" }
-    - { tag: "c-base", path: "/opt/registry/c/Dockerfile.base" }
+    - { tag: "whanos-befunge", path: "/opt/registry/befunge/Dockerfile.base" }
+    - { tag: "whanos-javascript", path: "/opt/registry/javascript/Dockerfile.base" }
+    - { tag: "whanos-python", path: "/opt/registry/python/Dockerfile.base" }
+    - { tag: "whanos-java", path: "/opt/registry/java/Dockerfile.base" }
+    - { tag: "whanos-c", path: "/opt/registry/c/Dockerfile.base" }
   become: true
