@@ -16,11 +16,38 @@
     update_cache: yes
   become: true
 
+- name: Disable Jenkins setup wizard
+  lineinfile:
+    path: /etc/default/jenkins
+    regexp: '^JAVA_ARGS='
+    line: 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"'
+  become: true
+
+- name: Add the environment variable to Jenkins service to point to the configuration as code
+  lineinfile:
+    path: /usr/lib/systemd/system/jenkins.service
+    regexp: '^Environment='
+    line: 'Environment="JAVA_OPTS=-Dcasc.jenkins.config=/var/jenkins_home/casc_configs/jenkins.yaml"'
+  become: true
+
 - name: Ensure Jenkins is running
   service:
     name: jenkins
     state: started
     enabled: yes
+  become: true
+
+- name: Create all needed folders (/var/whanos, /var/jenkins_home/casc_configs, /usr/share/jenkins/ref/init.groovy.d)
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - {path: "/var/whanos", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {path: "/var/jenkins_home/casc_configs", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {path: "/usr/share/jenkins/ref/init.groovy.d", owner: "jenkins", group: "jenkins", mode: "0755"}
   become: true
 
 - name: Put files in place
@@ -31,14 +58,14 @@
     group: "{{ item.group }}"
     mode: "{{ item.mode }}"
   with_items:
-    - {src: "files/plugins.txt", dest: "/var/whanos/plugins.txt", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "files/jenkins.yml", dest: "/var/jenkins_home/casc_configs/jenkins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "files/job_dsl.groovy", dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "files/docker-deploy.sh", dest: "/var/whanos/docker-deploy.sh", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {src: "../../../../jenkins/plugins.txt", dest: "/var/whanos/plugins.txt", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "../../../../jenkins/jenkins.yml", dest: "/var/jenkins_home/casc_configs/jenkins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "../../../../jenkins/job_dsl.groovy", dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy", owner: "jenkins", group: "jenkins", mode: "0644"}
+    - {src: "../../../../jenkins/docker-deploy.sh", dest: "/var/whanos/docker-deploy.sh", owner: "jenkins", group: "jenkins", mode: "0755"}
   become: true
 
 - name: Install Jenkins plugins
-  command: "jenkins-plugin-cli -f /var/whanos/plugins.txt"
+  command: "java -jar jenkins-cli.jar -s http://localhost:8080/ install-plugin `cat /var/whanos/plugins.txt | tr '\n' ' '`"
   become: true
 
 - name: Restart Jenkins
