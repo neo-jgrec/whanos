@@ -15,3 +15,9 @@
   roles:
     - jenkins
   tags: jenkins
+
+- name: NGINX Reverse Proxy
+  hosts: jenkins
+  roles:
+    - nginx
+  tags: nginx
