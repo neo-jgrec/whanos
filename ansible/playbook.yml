@@ -10,6 +10,12 @@
     - registry
   tags: docker-registry
 
+- name: Kubernetes
+  hosts: jenkins
+  roles:
+    - k8s
+  tags: k8s
+
 - name: Jenkins
   hosts: jenkins
   roles:
