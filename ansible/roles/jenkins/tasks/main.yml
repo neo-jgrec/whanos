@@ -105,6 +105,13 @@
     state: directory
     recurse: true
 
+- name: Add the jenkins user in the docker group
+  become: true
+  user:
+    name: jenkins
+    groups: docker
+    append: yes
+
 - name: start jenkins service
   become: true
   systemd:
