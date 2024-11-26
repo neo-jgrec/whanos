@@ -49,6 +49,8 @@
     - {path: "/var/cache/jenkins/tmp", owner: "jenkins", group: "jenkins", mode: "0755"}
     - {path: "/var/cache/jenkins/heapdumps", owner: "jenkins", group: "jenkins", mode: "0755"}
     - {path: "/var/lib/jenkins/plugins", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {path: "/var/lib/jenkins/.kube", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {path: "/var/whanos", owner: "jenkins", group: "jenkins", mode: "0755"}
   become: true
 
 - name: Update JENKINS_JAVA_OPTIONS
@@ -96,9 +98,30 @@
     mode: "{{ item.mode }}"
   with_items:
     - {src: "plugins.yaml", dest: "/tmp/plugins.yaml", owner: "jenkins", group: "jenkins", mode: "0644"}
-    - {src: "job_dsl.groovy", dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy", owner: "jenkins", group: "jenkins", mode: "0644"}
     - {src: "docker-deploy.sh", dest: "/var/whanos/docker-deploy.sh", owner: "jenkins", group: "jenkins", mode: "0755"}
+    - {src: "kubeconfig", dest: "/var/lib/jenkins/.kube/config", owner: "jenkins", group: "jenkins", mode: "0600"}
   become: true
+
+- name: Template copy the job_dsl.groovy file
+  template:
+    src: "../files/job_dsl.groovy"
+    dest: "/usr/share/jenkins/ref/init.groovy.d/job_dsl.groovy"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0644"
+  become: true
+
+- name: Add missing values to the script
+  lineinfile:
+    path: "/var/whanos/docker-deploy.sh"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: "^REGISTRY=", line: "REGISTRY={{ registry }}"}
+    - {regexp: "^REGISTRY_USER=", line: "REGISTRY_USER={{ registry_user }}"}
+    - {regexp: "^REGISTRY_PASS", line: "REGISTRY_PASS={{ registry_password }}"}
+  become: true
+  no_log: true
 
 - name: run the jenkins-plugin-manager
   become: true

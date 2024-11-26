@@ -1,12 +1,17 @@
+- name: Install useful packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+  become: true
+
 - name: Get Helm gpg key
   apt_key:
     url: https://baltocdn.com/helm/signing.asc
-    state: present
-  become: true
-
-- name: Install apt-transport-https
-  apt:
-    name: apt-transport-https
     state: present
   become: true
 
@@ -20,4 +25,10 @@
   apt:
     name: helm
     state: present
+  become: true
+
+- name: Copy the helm chart to the remote host
+  copy:
+    src: helm-chart
+    dest: /helm-chart
   become: true

@@ -7,14 +7,15 @@ folder('Projects') {
 }
 
 supported_languages = ["c", "java", "javascript", "python", "befunge"]
-registry = "localhost:5000"
+registry = "{{ registry }}"
 
 supported_languages.each { supported_languages ->
     freeStyleJob("Whanos base images/whanos-$supported_languages") {
         steps {
               shell("docker build /opt/registry/$supported_languages -f /opt/registry/$supported_languages/Dockerfile.base -t whanos-$supported_languages")
-              shell("docker tag whanos-befunge:latest $registry/whanos/befunge:latest")
-              shell("docker push $registry/whanos/befunge:latest")
+              shell("docker login -u {{ registry_user }} -p {{ registry_password }} $registry")
+              shell("docker tag whanos-$supported_languages $registry/whanos-$supported_languages")
+              shell("docker push $registry/whanos-$supported_languages")
         }
     }
 }

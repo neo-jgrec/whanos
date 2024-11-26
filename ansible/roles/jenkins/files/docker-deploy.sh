@@ -1,7 +1,9 @@
 #!/bin/bash
 
 LANGUAGE=()
-REGISTRY=localhost:5000
+REGISTRY=
+REGISTRY_USER=
+REGISTRY_PASS=
 DISPLAY_NAME=$(echo $(basename $(pwd)) | tr '[:upper:]' '[:lower:]')
 
 if [[ -f Makefile ]]; then
@@ -41,6 +43,17 @@ else
 fi
 
 docker tag $image_name $REGISTRY/$image_name || exit 1
+docker login $REGISTRY -u $REGISTRY_USER -p $REGISTRY_PASS || exit 1
 docker push $REGISTRY/$image_name || exit 1
 docker pull $REGISTRY/$image_name || exit 1
 docker rmi $image_name || exit 1
+
+if [[ -f whanos.yml ]]; then
+    echo "Whanos configuration detected, preparing Kubernetes deployment"
+
+    helm upgrade -if whanos.yml ${DISPLAY_NAME} /helm-chart/helm-chart/ \
+        --set image.repository=$REGISTRY/$image_name \
+        --set image.tag=latest \
+        --namespace default \
+        --create-namespace
+fi

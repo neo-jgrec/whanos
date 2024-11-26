@@ -1,0 +1,4 @@
+apiVersion: v2
+name: whanos-chart
+description: A Helm chart to deploy (almost) anything with a snap
+version: 0.1.0

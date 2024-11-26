@@ -1,3 +1,5 @@
 /whanos.pem
 /ansible/production/hosts
 .vault_pass
+/ansible/roles/jenkins/files/kubeconfig
+/ansible/roles/jenkins/vars/main.yml

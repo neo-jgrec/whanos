@@ -1,13 +1,3 @@
-- name: Add Docker's official GPG key
-  apt_key:
-    url: https://download.docker.com/linux/debian/gpg
-    state: present
-  become: true
-
-- name: Add the repository to Apt sources
-  command: "echo 'deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable' | tee /etc/apt/sources.list.d/docker.list"
-  become: true
-
 - name: Install Docker
   apt:
     name: docker.io
@@ -21,20 +11,6 @@
     state: started
     enabled: yes
     daemon_reload: yes
-
-- name: Start a REGISTRY container
-  docker_container:
-    name: registry
-    image: registry:2
-    state: started
-    restart_policy: always
-    ports:
-      - "5000:5000"
-    volumes:
-      - /opt/registry:/var/lib/registry
-    env:
-      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
-  become: true
 
 - name: Copy the Dockerfile images in the registry to /opt/registry
   copy:
@@ -60,9 +36,23 @@
 - name: Build the Docker images (base)
   command: "docker build -t {{ item.tag }} -f {{ item.path }} /opt/registry"
   with_items:
-    - { tag: "whanos-befunge", path: "/opt/registry/befunge/Dockerfile.base" }
-    - { tag: "whanos-javascript", path: "/opt/registry/javascript/Dockerfile.base" }
-    - { tag: "whanos-python", path: "/opt/registry/python/Dockerfile.base" }
-    - { tag: "whanos-java", path: "/opt/registry/java/Dockerfile.base" }
-    - { tag: "whanos-c", path: "/opt/registry/c/Dockerfile.base" }
+    - { tag: "{{ registry }}/whanos-befunge", path: "/opt/registry/befunge/Dockerfile.base" }
+    - { tag: "{{ registry }}/whanos-javascript", path: "/opt/registry/javascript/Dockerfile.base" }
+    - { tag: "{{ registry }}/whanos-python", path: "/opt/registry/python/Dockerfile.base" }
+    - { tag: "{{ registry }}/whanos-java", path: "/opt/registry/java/Dockerfile.base" }
+    - { tag: "{{ registry }}/whanos-c", path: "/opt/registry/c/Dockerfile.base" }
+  become: true
+
+- name: Login to our Docker registry
+  command: "docker login {{ registry }} -u {{ registry_user }} -p {{ registry_password }}"
+  become: true
+
+- name: Push the Docker images to our Docker registry
+  command: "docker push {{ registry }}/{{ item.tag }}"
+  with_items:
+    - { tag: "whanos-befunge" }
+    - { tag: "whanos-javascript" }
+    - { tag: "whanos-python" }
+    - { tag: "whanos-java" }
+    - { tag: "whanos-c" }
   become: true
